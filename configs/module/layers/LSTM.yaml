@@ -1,0 +1,9 @@
+_target_: torch.nn.LSTM
+
+input_size: 1
+hidden_size: 16
+num_layers: 1
+bias: True
+batch_first: True
+dropout: 0.0
+bidirectional: False

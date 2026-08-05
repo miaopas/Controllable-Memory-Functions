@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - /experiment/Mixed_Models/S4_LSTM/base.yaml
+
+data:
+  T: 1024
+  D: 1
+  rho_name: exponential
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "Mixed_S4_LSTM_exp_experiment"
+  tags: ["Mixed_S4_LSTM", "exp", "experiment"]
+
+# 10*5*4 = 200 runs
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05263158, 0.08433735, 0.11801242, 0.15384615, 0.19205298, 0.23287671, 0.27659574, 0.32352941, 0.3740458, 0.42857139]
+    module.model_size: [8, 16, 32, 64, 128]
+    run_specs.seed: [11, 22, 33, 44]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "Mixed_S4_LSTM_exp_experiment"

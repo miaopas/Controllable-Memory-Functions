@@ -1,0 +1,46 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+  - override /module: lit_module/mix_model/Transformer_LSTM
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 300
+
+module:
+  model_size: 16
+  layers:
+    Transformer:
+      input_dim: 1
+      output_dim: ${...model_size}
+      hid_dim: ${...model_size}
+      nhead: 4
+      num_layers: 2
+      src_length: 256
+      dim_feedforward: 64
+    LSTM:
+      input_size: ${...model_size}
+      hidden_size: ${...model_size}
+      num_layers: 1
+    Output:
+      input_size: ${...model_size}
+      output_size: 1
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"
+
+logger:
+  wandb:
+    name: "Transformer_LSTM-m${module.model_size}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"

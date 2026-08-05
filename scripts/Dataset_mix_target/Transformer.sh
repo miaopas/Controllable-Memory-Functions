@@ -1,0 +1,1 @@
+python src/train_multiple.py trainer=gpu experiment=Dataset/Transformer/mix_target/coarse +skip_confirm=true

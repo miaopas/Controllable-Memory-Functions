@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 500
+  # gradient_clip_val: 0.5
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"

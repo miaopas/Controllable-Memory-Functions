@@ -1,0 +1,32 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.LSTM1: LSTM
+  - layers@layers.LSTM2: LSTM
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 16
+  LSTM1:
+    input_size: 16
+    hidden_size: 16
+    num_layers: 1
+  LSTM2:
+    input_size: 16
+    hidden_size: 16
+    num_layers: 1
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.LSTM1}
+    - ${module.layers.LSTM2}
+    - ${module.layers.Output}

@@ -1,0 +1,48 @@
+# @package _global_
+
+defaults:
+  - /experiment/Train/base.yaml
+  - override /module: lit_module/ContinuousTransformer
+  - override /module/lit_module/optimizer: AdamW
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+  - override /callbacks: 
+    - default
+    - check_unused_parameters
+
+data:
+  T: 128
+  D: 1
+  rho_name: impulse
+  rho_param:
+    alpha: 1
+  batch_size: 128 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+  train_val_test_split: [263840, 2048, 2048]
+
+module:
+  layers:
+    Layer1:
+      input_dim: 1
+      output_dim: 1 
+      hid_dim: 32
+      depth: 1
+      n_head: 1
+      seq_len: 128
+
+
+  lit_module:
+      optimizer:
+        lr: 0.00005
+
+
+run_specs:
+  task_name: "Testing"
+  tags: ["Testing"]
+
+
+
+logger:
+  wandb:
+    name: "Testing_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Teting"

@@ -1,0 +1,9 @@
+_target_: ${import:Transformer_torch}
+
+input_dim: 2
+output_dim: 1
+num_layers: 1
+hid_dim: 16
+nhead: 2
+src_length: 8
+dim_feedforward: 64

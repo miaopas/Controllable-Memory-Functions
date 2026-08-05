@@ -1,0 +1,32 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.TCN1: TCN
+  - layers@layers.TCN2: TCN
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 64
+  TCN1:
+    input_size: 64
+    n_layers: 10
+    channel: 16
+  TCN2:
+    input_size: 16
+    n_layers: 10
+    channel: 16
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.TCN1}
+    - ${module.layers.TCN2}
+    - ${module.layers.Output}

@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/TCN/base.yaml
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: airy
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "TCN_airy_experiment"
+  tags: ["TCN", "airy", "experiment"]
+
+
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    module.layers.Layer2.channel: [1,2,4,8,16,32,64]
+    run_specs.seed: [11, 22,33,44,55]
+  resources:
+    cpu: 3
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "TCN_airy_experiment"

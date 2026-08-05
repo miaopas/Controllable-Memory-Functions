@@ -1,0 +1,5 @@
+_target_: ${import:S4}
+
+d_model: 128
+n_layers: 1
+transposed: False

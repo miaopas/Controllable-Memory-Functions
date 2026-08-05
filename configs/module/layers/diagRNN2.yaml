@@ -1,0 +1,5 @@
+_target_: ${import:diagRNN2}
+
+input_dim: 1
+output_dim: 1
+hidden_dim: 16

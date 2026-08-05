@@ -1,0 +1,23 @@
+defaults:
+  - layers@layers.Layer1: Transformer
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_dim: 1
+    out_dim: 1
+    hid_dim: 32
+    n_layers: 1
+    d_h: 8
+    d_v: 8
+    n_heads: 4
+    pf_dim: 16
+    pf_layers: 2
+    input_length: 256
+
+model:
+  layers:
+    - ${module.layers.Layer1}

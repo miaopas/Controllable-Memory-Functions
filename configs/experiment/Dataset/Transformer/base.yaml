@@ -1,0 +1,49 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+  - override /module: lit_module/Transformer_torch
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 300
+  # gradient_clip_val: 0.5
+
+
+module:
+  layers:
+    Layer1:
+      input_dim: 1
+      output_dim: 1
+      num_layers: 1
+      hid_dim: 6
+      nhead: 4
+      src_length: 128
+      dim_feedforward: 1024
+
+  lit_module:
+      optimizer:
+        lr: 0.0001
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"
+
+
+logger:
+  wandb:
+    name: "Transformer-dim${module.layers.Layer1.hid_dim}_head${module.layers.Layer1.nhead}_layer${module.layers.Layer1.num_layers}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"

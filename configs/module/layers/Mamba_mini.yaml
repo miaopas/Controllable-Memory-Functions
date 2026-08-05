@@ -1,0 +1,3 @@
+_target_: ${import:mambaMini}
+
+d_model: 16

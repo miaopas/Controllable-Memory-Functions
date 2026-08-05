@@ -1,0 +1,16 @@
+defaults:
+  - layers@layers.Layer1: LinearRNN
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_dim: 1
+    output_dim: 1
+    hid_dim: 64
+
+model:
+  layers:
+    - ${module.layers.Layer1}

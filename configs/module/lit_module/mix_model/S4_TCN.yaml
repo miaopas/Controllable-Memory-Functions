@@ -1,0 +1,34 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.S4: S4
+  - layers@layers.TCN: TCN
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 16
+  S4:
+    d_model: 16
+    n_layers: 1
+    transposed: False
+  TCN:
+    input_size: 16
+    n_layers: 10
+    channel: 16
+    kernel_size: 2
+    dropout: 0.1
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.S4}
+    - ${module.layers.TCN}
+    - ${module.layers.Output}

@@ -1,0 +1,55 @@
+# @package _global_
+
+defaults:
+  - /experiment/Train/base.yaml
+  - override /module: lit_module/S4
+  - override /module/lit_module/optimizer: Adam
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+  - override /callbacks: 
+    - default
+    # - check_unused_parameters
+    - s4d_spectrum
+
+data:
+  T: 512
+  D: 1
+  rho_name: impulse
+  rho_param:
+    alpha: 1
+  # inner_activation: tanh
+  # output_activation: tanh
+  train_val_test_split: [16384, 2048, 2048]
+  batch_size: 32
+
+module:
+  layers:
+    Layer1:
+      input_size: 1
+      output_size: ${..Layer2.d_model}
+    Layer2:
+      d_model: 16
+      d_state: 32
+    Layer3:
+      input_size: ${..Layer2.d_model}
+      output_size: 1
+  lit_module:
+    scheduler:
+      factor: 0.2
+      patience: 6
+    optimizer:
+      lr: 0.001
+  
+
+
+run_specs:
+  task_name: "Testing"
+  tags: ["Testing"]
+
+
+
+logger:
+  wandb:
+    name: "Small_lr_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Testing"

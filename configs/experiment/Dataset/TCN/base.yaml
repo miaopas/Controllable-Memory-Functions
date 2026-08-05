@@ -1,0 +1,47 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+  - override /module: lit_module/TCN
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 300
+  # gradient_clip_val: 0.5
+
+
+module:
+  layers:
+    Layer1:
+      input_size: 1
+      output_size: ${..Layer2.channel}
+    Layer2:
+      input_size: ${..Layer2.channel}
+      n_layers: 10
+      channel: ${..Layer2.channel}
+    Layer3:
+      input_size: ${..Layer2.channel}
+      output_size: 1
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"
+
+
+logger:
+  wandb:
+    name: "TCN-m${module.layers.Layer2.channel}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"

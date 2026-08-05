@@ -1,0 +1,10 @@
+defaults:
+  - layers@layers.Layer1: DCN
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+model:
+  layers:
+    - ${module.layers.Layer1}

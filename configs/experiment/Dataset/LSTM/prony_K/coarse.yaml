@@ -1,0 +1,35 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+
+data:
+  T: 1024
+  D: 1
+  rho_name: prony
+  inner_activation: tanh
+  output_activation: tanh
+  rho_param:
+    alpha: 0      # dummy — satisfies configs/data/lf.yaml requirement
+    K: 1          # placeholder, overridden by sweeper
+    gamma: 0.5    # fixed
+
+run_specs:
+  task_name: "LSTM_prony_K_experiment"
+  tags: ["LSTM", "prony", "K", "experiment"]
+
+sweeper:
+  param:
+    data.rho_param.K: [1, 2, 4, 8, 16, 32]
+    module.layers.LSTM.hidden_size: [4,8, 16, 32, 64]
+    run_specs.seed: [11]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    name: "LSTM-m${module.layers.LSTM.hidden_size}_K${data.rho_param.K}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "LSTM_prony_K_experiment"

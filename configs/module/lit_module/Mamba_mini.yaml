@@ -1,0 +1,24 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.Mamba_mini: Mamba_mini
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Mamba_mini:
+    d_model: 16
+  Input:
+    input_size: 1
+    output_size: 16
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.Mamba_mini}
+    - ${module.layers.Output}

@@ -1,0 +1,32 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/S4/base.yaml
+
+data:
+  T: 1024
+  D: 1
+  rho_name: prony
+  inner_activation: tanh
+  output_activation: tanh
+  rho_param:
+    alpha: 0      # dummy — satisfies configs/data/lf.yaml requirement
+    K: 1          # placeholder, overridden by sweeper
+    gamma: 0.5    # fixed
+
+run_specs:
+  task_name: "S4_prony_K_experiment"
+  tags: ["S4", "prony", "K", "experiment"]
+
+sweeper:
+  param:
+    data.rho_param.K: [1, 2, 4, 8, 16, 32]
+    module.layers.Layer2.d_model: [4, 8, 16, 32, 64]
+    run_specs.seed: [11, 22, 33, 44, 55]
+  resources:
+    cpu: 6
+    gpu: 0.49
+
+logger:
+  wandb:
+    project: "S4_prony_K_experiment"

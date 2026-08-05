@@ -1,0 +1,19 @@
+
+% Requires \usepackage{xcolor} and \usepackage{colortbl} in preamble
+% Color scheme: Green = better (lower sensitivity), Red = worse (higher sensitivity)
+% Uses unsaturated colors for better readability
+\begin{table}[h]
+\centering
+\caption{Alpha Sensitivity for Mixed Models - POLY Memory Function: Relative Loss Increment from Minimum to Maximum $\alpha$ (Mean $\pm$ SEM) - Colored}
+\label{tab:mixed_alpha_sensitivity_poly_colored}
+\begin{tabular}{lcccc}
+\hline
+Model 1 $\downarrow$ / Model 2 $\rightarrow$ & LSTM & S4 & TCN & Transformer \\
+\hline
+LSTM & \cellcolor{gray!20}$2.48 \pm 2.09 \times 10^{0}$ & \cellcolor{green!30!white}$1.72 \pm 0.53 \times 10^{-1}$ & \cellcolor{green!30!white}$2.36 \pm 0.64 \times 10^{0}$ & \cellcolor{green!30!white}$8.86 \pm 4.08 \times 10^{-1}$ \\
+S4 & \cellcolor{green!30!white}$7.41 \pm 2.99 \times 10^{-2}$ & \cellcolor{gray!20}$1.96 \pm 0.35 \times 10^{-1}$ & \cellcolor{green!30!white}$3.74 \pm 0.80 \times 10^{-1}$ & \cellcolor{green!30!white}$2.84 \pm 0.73 \times 10^{-1}$ \\
+TCN & \cellcolor{green!30!white}$1.56 \pm 0.50 \times 10^{0}$ & \cellcolor{green!30!white}$8.93 \pm 3.34 \times 10^{-1}$ & \cellcolor{gray!20}$2.77 \pm 1.72 \times 10^{1}$ & \cellcolor{green!9!white}$8.18 \pm 3.27 \times 10^{1}$ \\
+Transformer & \cellcolor{green!30!white}$1.57 \pm 0.21 \times 10^{0}$ & \cellcolor{green!30!white}$2.25 \pm 0.30 \times 10^{0}$ & \cellcolor{red!6!white}$1.08 \pm 0.63 \times 10^{2}$ & \cellcolor{gray!20}$1.68 \pm 0.17 \times 10^{2}$ \\
+\hline
+\end{tabular}
+\end{table}

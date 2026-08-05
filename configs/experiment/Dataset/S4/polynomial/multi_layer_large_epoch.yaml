@@ -1,0 +1,33 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/S4/base.yaml
+
+trainer:
+  min_epochs: 10
+  max_epochs: 1000
+
+data:
+  T: 1024
+  D: 1
+  rho_name: polynomial
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_S4_poly"
+  tags: ["S4", "poly", "multilayer"]
+
+
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05      , 0.07777778, 0.10555556, 0.13333333, 0.16111111, 0.18888889, 0.21666667, 0.24444444, 0.27222222, 0.3       ]
+    module.layers.Layer2.d_model: [32]
+    module.layers.Layer2.n_layers: [2,3,4,5,6]
+    run_specs.seed: [11,22,33]
+  resources:
+    cpu: 6
+    gpu: 0.49
+
+logger:
+  wandb:
+    project: "Multilayer_S4_poly_large_epoch"

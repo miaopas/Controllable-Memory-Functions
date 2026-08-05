@@ -1,0 +1,6 @@
+_target_: ${import:LinearRNN}
+
+input_dim: 1
+output_dim: 1
+hid_dim: 64
+n_layer: 1

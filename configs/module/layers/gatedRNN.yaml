@@ -1,0 +1,6 @@
+_target_: ${import:gatedRNN}
+
+input_dim: 1
+output_dim: 1
+hid_dim: 16
+gate_dim: 16

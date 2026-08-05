@@ -1,0 +1,46 @@
+# @package _global_
+
+defaults:
+  - /experiment/Train/base.yaml
+  - override /module: lit_module/mix_model/LSTM_TCN
+  - override /module/lit_module/optimizer: Adam
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+  - override /callbacks:
+    - default
+    - check_unused_parameters
+
+data:
+  T: 1024
+  D: 1
+  rho_name: exponential
+  rho_param:
+    alpha: 0.1
+
+module:
+  model_size: 64
+  layers:
+    Input:
+      input_size: 1
+      output_size: ${...model_size}
+    LSTM:
+      input_size: ${...model_size}
+      hidden_size: ${...model_size}
+      num_layers: 1
+    TCN:
+      input_size: ${...model_size}
+      n_layers: 10
+      channel: ${...model_size}
+    Output:
+      input_size: ${...model_size}
+      output_size: 1
+
+run_specs:
+  task_name: "Testing_LSTM_TCN"
+  tags: ["Testing", "Mixed_LSTM_TCN"]
+
+logger:
+  wandb:
+    name: "Testing_LSTM_TCN_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Testing"

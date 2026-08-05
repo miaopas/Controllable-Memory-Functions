@@ -1,0 +1,6 @@
+_target_: ${import:Linear}
+
+input_size: 1
+output_size: 128
+activation: linear
+bias: True

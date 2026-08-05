@@ -1,0 +1,30 @@
+defaults:
+  - layers@layers.Transformer1: Transformer_torch
+  - layers@layers.Transformer2: Transformer_torch
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Transformer1:
+    input_dim: 1
+    output_dim: 16
+    num_layers: 2
+    hid_dim: 16
+    nhead: 4
+    src_length: 1024
+    dim_feedforward: 64
+  Transformer2:
+    input_dim: 16
+    output_dim: 1
+    num_layers: 2
+    hid_dim: 16
+    nhead: 4
+    src_length: 1024
+    dim_feedforward: 64
+
+model:
+  layers:
+    - ${module.layers.Transformer1}
+    - ${module.layers.Transformer2}

@@ -1,0 +1,40 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+
+data:
+  T: 256
+  D: 1
+  rho_name: impulse
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "lstm_impulse_experiment"
+  tags: ["lstm", "impulse", "experiment"]
+
+module:
+  lit_module:
+    scheduler:
+      factor: 0.8
+      patience: 10
+    optimizer:
+      lr: 0.001
+
+# 8*7*5
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    module.layers.LSTM.hidden_size: [4,8,16,32,64,128,256]
+    run_specs.seed: [11, 22,33,44,55]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    name: "LSTM-m${module.layers.LSTM.hidden_size}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "LSTM_impulse_experiment"

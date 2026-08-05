@@ -1,0 +1,32 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.S4_1: S4
+  - layers@layers.S4_2: S4
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 16
+  S4_1:
+    d_model: 16
+    n_layers: 1
+    transposed: False
+  S4_2:
+    d_model: 16
+    n_layers: 1
+    transposed: False
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.S4_1}
+    - ${module.layers.S4_2}
+    - ${module.layers.Output}

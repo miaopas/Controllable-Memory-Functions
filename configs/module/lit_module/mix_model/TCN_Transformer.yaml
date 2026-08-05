@@ -1,0 +1,33 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.TCN: TCN
+  - layers@layers.Transformer: Transformer_torch
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 64
+  TCN:
+    input_size: 64
+    n_layers: 10
+    channel: 16
+    kernel_size: 2
+    dropout: 0.1
+  Transformer:
+    input_dim: 16
+    output_dim: 1
+    num_layers: 2
+    hid_dim: 16
+    nhead: 4
+    src_length: 1024
+    dim_feedforward: 64
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.TCN}
+    - ${module.layers.Transformer}

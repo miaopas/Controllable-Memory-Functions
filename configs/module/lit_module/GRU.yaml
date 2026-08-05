@@ -1,0 +1,25 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.GRU: GRU
+  - layers@layers.Output: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  GRU:
+    input_size: 16
+    hidden_size: 16
+  Input:
+    input_size: 1
+    output_size: 16
+  Output:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.GRU}
+    - ${module.layers.Output}

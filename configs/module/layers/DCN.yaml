@@ -1,0 +1,7 @@
+_target_: ${import:DCN}
+
+input_dim: 1
+output_dim: 1
+hid_dim: 1
+kernel_size: 2
+num_layers: 8

@@ -1,0 +1,17 @@
+defaults:
+  - layers@layers.Layer1: gatedRNN
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_dim: 1
+    output_dim: 1
+    hid_dim: 16
+    gate_dim: 16
+
+model:
+  layers:
+    - ${module.layers.Layer1}

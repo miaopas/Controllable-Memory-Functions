@@ -1,0 +1,45 @@
+name: controllable-memory-functions
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  
+  # NumPy pinned to 1.x
+  - numpy<2.0
+  
+  # PyTorch with CUDA from pytorch channel
+  - pytorch::pytorch==2.2.0
+  - pytorch::pytorch-cuda=12.1
+  - pytorch::torchvision==0.17.0
+  - pytorch::torchaudio==2.2.0
+  
+  # Use conda-forge's OpenMP to avoid conflicts
+  - conda-forge::llvm-openmp
+  
+  - matplotlib
+  - scikit-learn
+  - seaborn
+  - jupyter
+
+  - pip:
+      - ray[tune]==2.40.0
+      - hydra-core==1.3.2
+      - hydra-colorlog==1.2.0
+      - hydra-optuna-sweeper==1.2.0
+      - lightning==2.5.0.post0
+      - pykeops==2.2.3
+      - einops==0.8.0
+      - wandb==0.19.1
+      - tensorboard==2.18.0
+      - rootutils==1.0.7
+      - rich==13.9.4
+      - setuptools==75.6.0
+      - autoroot==1.0.1
+      - x-transformers==2.2.1
+      - natsort==8.4.0
+      - torchtune==0.6.1
+      - torchao==0.10.0

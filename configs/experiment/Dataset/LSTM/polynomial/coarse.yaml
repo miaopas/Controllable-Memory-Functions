@@ -1,0 +1,34 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: polynomial
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "lstm_poly_experiment"
+  tags: ["lstm", "poly", "experiment"]
+
+# 10*7*5=350
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05      , 0.07777778, 0.10555556, 0.13333333, 0.16111111, 0.18888889, 0.21666667, 0.24444444, 0.27222222, 0.3       ]
+    module.layers.LSTM.hidden_size: [4,8,16,32,64,128,256]
+    run_specs.seed: [11, 22,33,44,55]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+
+logger:
+  wandb:
+    name: "LSTM-m${module.layers.LSTM.hidden_size}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "LSTM_poly_experiment"

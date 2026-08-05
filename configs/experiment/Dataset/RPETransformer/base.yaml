@@ -1,0 +1,56 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+  - override /module: lit_module/RelativeTransformer
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 300
+  # gradient_clip_val: 0.5
+
+module:
+  layers:
+    Layer1:
+      input_dim: 1
+      output_dim: 1
+      num_layers: 1
+      hid_dim: 128
+      nhead: 1
+      dim_feedforward: 1024
+      dropout: 0
+      style: rotary
+      causal: True
+      max_distance: 128
+      src_length: 128
+
+
+  lit_module:
+      optimizer:
+        lr: 0.0001
+
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"
+
+
+logger:
+  wandb:
+    name: "${module.layers.Layer1.style}-dim${module.layers.Layer1.hid_dim}_head${module.layers.Layer1.nhead}_layer${module.layers.Layer1.num_layers}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+
+
+
+
+

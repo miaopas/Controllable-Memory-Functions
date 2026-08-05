@@ -1,0 +1,39 @@
+# @package _global_
+
+defaults:
+  - /experiment/Mixed_Models/Transformer_S4/base.yaml
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+
+data:
+  T: 256
+  D: 1
+  rho_name: impulse
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "Mixed_Transformer_S4_impulse_experiment"
+  tags: ["Mixed_Transformer_S4", "impulse", "experiment"]
+
+module:
+  lit_module:
+    scheduler:
+      factor: 0.8
+      patience: 10
+    optimizer:
+      lr: 0.001
+
+
+# 8*5*4 = 160 runs
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1, 8).tolist()
+    module.model_size: [8, 16, 32, 64, 128]
+    run_specs.seed: [11, 22, 33, 44]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "Mixed_Transformer_S4_impulse_experiment"

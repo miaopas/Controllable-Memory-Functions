@@ -1,0 +1,14 @@
+_target_: ${import:LFDataModule}
+data_dir: ${paths.data_dir}/lf
+batch_size: 64 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+train_val_test_split: [16384, 2048, 2048] # totally 20480
+num_workers: 8
+pin_memory: False
+
+T: 256 # (128, 256)
+D: 1 # Input dimension
+save_file: False
+
+rho_name: ???
+rho_param:
+  alpha: ???

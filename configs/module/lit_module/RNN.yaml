@@ -1,0 +1,20 @@
+defaults:
+  - layers@layers.Layer1: RNN
+  - layers@layers.Layer2: Linear
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_size: 1
+    hidden_size: 16
+  Layer2:
+    input_size: 16
+    output_size: 1
+
+model:
+  layers:
+    - ${module.layers.Layer1}
+    - ${module.layers.Layer2}

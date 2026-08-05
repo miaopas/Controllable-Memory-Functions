@@ -1,0 +1,36 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+
+trainer:
+  min_epochs: 10
+  max_epochs: 1000
+
+data:
+  T: 1024
+  D: 1
+  rho_name: airy
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_LSTM_airy"
+  tags: ["lstm", "airy", "multilayer"]
+
+# 8*5*5=200
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    module.layers.LSTM.hidden_size: [32]
+    module.layers.LSTM.num_layers: [2,3,4,5,6]
+    run_specs.seed: [11, 22,33]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    name: "LSTM-h${module.layers.LSTM.hidden_size}_l${module.layers.LSTM.num_layers}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Multilayer_LSTM_airy_large_epoch"

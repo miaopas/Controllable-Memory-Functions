@@ -1,0 +1,20 @@
+defaults:
+  - layers@layers.Layer1: RelataiveTransformer
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_dim: 1
+    output_dim: 1
+    num_layers: 1
+    hid_dim: 64
+    nhead: 1
+    dim_feedforward: 1024
+    dropout: 0
+
+model:
+  layers:
+    - ${module.layers.Layer1}

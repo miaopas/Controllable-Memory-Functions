@@ -1,0 +1,33 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: exponential
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_LSTM_exp"
+  tags: ["lstm", "exp", "multilayer"]
+
+# 10*5*5 = 250
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05263158, 0.08433735, 0.11801242, 0.15384615, 0.19205298, 0.23287671, 0.27659574, 0.32352941, 0.3740458 , 0.42857139]
+    module.layers.LSTM.hidden_size: [32]
+    module.layers.LSTM.num_layers: [2,3,4,5,6]
+    run_specs.seed: [11,22,33,44,55]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    name: "LSTM-h${module.layers.LSTM.hidden_size}_l${module.layers.LSTM.num_layers}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Multilayer_LSTM_exp"

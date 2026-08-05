@@ -1,0 +1,29 @@
+#PBS -q normal
+#PBS -l select=1:ngpus=4
+#PBS -P <YOUR_PBS_PROJECT_ID>
+#PBS -l walltime=24:00:00
+#PBS -N controllable_memory_function_jobs
+#PBS -o logs/pbs/
+#PBS -e logs/pbs/
+
+cd "${PBS_O_WORKDIR:-$PWD}"
+
+module load singularity/3.10.0
+
+# Get the job index
+JOB_IDX=${PBS_ARRAY_INDEX:-0}
+
+# Get the command for this array ID (PBS is 0-based, sed needs 1-based)
+LINE_NUMBER=$((JOB_IDX + 1))
+COMMAND=$(sed -n "${LINE_NUMBER}p" $TEMP_FILE)
+
+
+# Execute the command
+eval singularity exec \
+  --nv \
+  --bind $PWD:/workspace \
+  --pwd /workspace \
+  --env WANDB_API_KEY=$WANDB_API_KEY \
+  --env WANDB_CONSOLE=off \
+  --env WANDB_SILENT=true \
+  image.sif $COMMAND

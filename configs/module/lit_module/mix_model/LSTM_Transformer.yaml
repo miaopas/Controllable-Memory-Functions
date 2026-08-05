@@ -1,0 +1,31 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.LSTM: LSTM
+  - layers@layers.Transformer: Transformer_torch
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 16
+  LSTM:
+    input_size: 16
+    hidden_size: 16
+    num_layers: 1
+  Transformer:
+    input_dim: 16
+    output_dim: 1
+    num_layers: 2
+    hid_dim: 16
+    nhead: 4
+    src_length: 1024
+    dim_feedforward: 64
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.LSTM}
+    - ${module.layers.Transformer}

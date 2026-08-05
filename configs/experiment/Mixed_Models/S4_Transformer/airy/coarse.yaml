@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - /experiment/Mixed_Models/S4_Transformer/base.yaml
+
+data:
+  T: 256
+  D: 1
+  rho_name: airy
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "Mixed_S4_Transformer_airy_experiment"
+  tags: ["Mixed_S4_Transformer", "airy", "experiment"]
+
+# 8*5*4 = 160 runs
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1, 8).tolist()
+    module.model_size: [8, 16, 32, 64, 128]
+    run_specs.seed: [11, 22, 33, 44]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "Mixed_S4_Transformer_airy_experiment"

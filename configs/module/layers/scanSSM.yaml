@@ -1,0 +1,6 @@
+_target_: ${import:scanSSM}
+
+input_dim: 1
+output_dim: 1
+# hid_dim: 1024
+# mode: conv

@@ -1,0 +1,48 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/RPETransformer/base.yaml
+
+
+
+data:
+  T: 128
+  D: 1
+  rho_name: impulse
+  batch_size: 64
+  train_val_test_split: [50000, 2048, 2048]
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "RPETransformer_impulse_PE_sweep"
+  tags: ["RPETransformer", "impulse", "PE_sweep"]
+
+module:
+  layers:
+    Layer1:
+      input_dim: 1
+      output_dim: 1
+      num_layers: 1
+      hid_dim: 128
+      nhead: 4
+      dim_feedforward: 1024
+      dropout: 0
+      causal: True
+      max_distance: 128
+      src_length: 128
+
+
+sweeper:
+  param:
+    module.layers.Layer1.style: ["rotary", "t5", "absolute", "relative"]
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    run_specs.seed: [11, 22,33,44,55]
+
+  resources:
+    cpu: 6
+    gpu: 0.49
+
+logger:
+  wandb:
+    project: "RPETransformer_impulse_PE_sweep"

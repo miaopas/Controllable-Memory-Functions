@@ -1,0 +1,38 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/LSTM/base.yaml
+
+trainer:
+  min_epochs: 10
+  max_epochs: 1000
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: polynomial
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_LSTM_poly"
+  tags: ["lstm", "poly", "multilayer"]
+
+# 10*5*5=250
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05      , 0.07777778, 0.10555556, 0.13333333, 0.16111111, 0.18888889, 0.21666667, 0.24444444, 0.27222222, 0.3       ]
+    module.layers.LSTM.hidden_size: [32]
+    module.layers.LSTM.num_layers: [2,3,4,5,6]
+    run_specs.seed: [11, 22,33]
+  resources:
+    cpu: 4
+    gpu: 0.33
+
+
+logger:
+  wandb:
+    name: "LSTM-h${module.layers.LSTM.hidden_size}_l${module.layers.LSTM.num_layers}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "Multilayer_LSTM_poly_large_epoch"

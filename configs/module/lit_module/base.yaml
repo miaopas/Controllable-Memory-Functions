@@ -1,0 +1,12 @@
+# @package module.lit_module
+
+defaults:
+  - optimizer: Adam
+  - scheduler: CosineAnnealingLR
+
+_target_: ${import:LitModule}
+
+# compile model for faster training with pytorch 2.0
+compile: false
+
+model: ${module.model}

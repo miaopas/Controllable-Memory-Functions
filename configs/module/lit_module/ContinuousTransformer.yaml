@@ -1,0 +1,19 @@
+defaults:
+  - layers@layers.Layer1: ContinuousTransformer
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Layer1:
+    input_dim: 1
+    output_dim: 1 
+    hid_dim: 64
+    depth: 1
+    n_head: 1
+    seq_len: 256
+
+model:
+  layers:
+    - ${module.layers.Layer1}

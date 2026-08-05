@@ -1,0 +1,50 @@
+# @package _global_
+defaults:
+  - override /data: lf
+  - override /trainer: gpu.yaml
+  - override /module: lit_module/mix_model/S4_S4
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+paths:
+  run_dir: "# Decided by individual runs"
+
+trainer:
+  min_epochs: 10
+  max_epochs: 300
+  # gradient_clip_val: 0.5
+
+module:
+  model_size: 16  # Main parameter controlling model capacity
+  layers:
+    Input:
+      input_size: 1
+      output_size: ${...model_size}
+    S4_1:
+      d_model: ${...model_size}
+      n_layers: 1
+      transposed: False
+    S4_2:
+      d_model: ${...model_size}
+      n_layers: 1
+      transposed: False
+    Output:
+      input_size: ${...model_size}
+      output_size: 1
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/loss"
+    mode: "min"
+    save_top_k: 1
+
+  early_stopping:
+    monitor: "train/loss_epoch"
+    mode: "min"
+
+logger:
+  wandb:
+    name: "S4_S4-m${module.model_size}_${round:${data.rho_param.alpha}}_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"

@@ -1,0 +1,30 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/TCN/base.yaml
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: impulse
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_TCN_impulse"
+  tags: ["TCN", "impulse", "multilayer"]
+
+
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    module.layers.Layer2.channel: [32]
+    module.layers.Layer2.n_layers: [2,4,6,8,10]
+    run_specs.seed: [11, 22,33,44,55]
+  resources:
+    cpu: 2
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "Multilayer_TCN_impulse"

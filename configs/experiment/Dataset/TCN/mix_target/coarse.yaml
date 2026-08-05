@@ -1,0 +1,28 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/TCN/base.yaml
+
+data:
+  T: 1024
+  D: 1
+  rho_name: mix_exp_impulse
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "TCN_mix_target_experiment"
+  tags: ["TCN", "mix_target", "experiment"]
+
+sweeper:
+  param:
+    data.rho_param.alpha: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    module.layers.Layer2.channel: [8, 16, 32, 64, 128]
+    run_specs.seed: [11, 22, 33, 44]
+  resources:
+    cpu: 2
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "TCN_mix_target_experiment"

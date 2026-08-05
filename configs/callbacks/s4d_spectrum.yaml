@@ -1,0 +1,2 @@
+s4d_spectrum:
+  _target_: ${import:s4d_spectrum}

@@ -1,0 +1,58 @@
+# @package _global_
+
+defaults:
+  - /experiment/Train/base.yaml
+  - override /module: lit_module/RelativeTransformer
+  - override /module/lit_module/optimizer: Adam
+  - override /module/lit_module/scheduler: ReduceLROnPlateau
+  - override /callbacks: 
+    - default
+    - check_unused_parameters
+
+data:
+  T: 128
+  D: 1
+  rho_name: impulse
+  rho_param:
+    alpha: 1
+  batch_size: 64
+  train_val_test_split: [50000, 2048, 2048]
+  inner_activation: tanh
+  output_activation: tanh
+
+
+module:
+  layers:
+    Layer1:
+      input_dim: 1
+      output_dim: 1
+      num_layers: 1
+      hid_dim: 128
+      nhead: 1
+      dim_feedforward: 1024
+      dropout: 0
+      style: rotary
+      causal: True
+      max_distance: 128
+      src_length: 128
+    
+
+
+
+  lit_module:
+      optimizer:
+        lr: 0.0001
+
+
+run_specs:
+  task_name: "RPETransformerTesting"
+  tags: ["Testing_RPEtransformer"]
+
+
+
+logger:
+  wandb:
+    name: "Testing_${random_id:4}"
+    tags: ${run_specs.tags}
+    group: "lf"
+    project: "RPETransformerTesting"

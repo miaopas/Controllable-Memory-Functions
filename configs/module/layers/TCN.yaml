@@ -1,0 +1,7 @@
+_target_: ${import:TCN}
+
+input_size: 64
+n_layers: 10
+channel: 16
+kernel_size: 2
+dropout: 0.1

@@ -1,0 +1,26 @@
+# @package _global_
+
+# specify here default configuration
+# order of defaults determines the order in which configs override each other
+defaults:
+  - _import_path: default
+  - run_specs: default
+  - _self_
+  - data: null
+  - module: null
+  - callbacks: default
+  - logger:
+      - wandb
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+
+  - experiment: null
+  - debug: null
+
+run_specs:
+  task_name: "train_multiple"
+  tags: ["dev"]
+  train_multiple_flag: True
+  seed: 12345

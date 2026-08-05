@@ -1,0 +1,31 @@
+defaults:
+  - layers@layers.Input: Linear
+  - layers@layers.S4: S4
+  - layers@layers.Transformer: Transformer_torch
+
+  - model: Sequential
+  - lit_module: base
+  - _self_
+
+layers:
+  Input:
+    input_size: 1
+    output_size: 16
+  S4:
+    d_model: 16
+    n_layers: 1
+    transposed: False
+  Transformer:
+    input_dim: 16
+    output_dim: 1
+    num_layers: 2
+    hid_dim: 16
+    nhead: 4
+    src_length: 1024
+    dim_feedforward: 64
+
+model:
+  layers:
+    - ${module.layers.Input}
+    - ${module.layers.S4}
+    - ${module.layers.Transformer}

@@ -1,0 +1,10 @@
+_target_: torch.nn.RNN
+
+input_size: 1
+hidden_size: 16
+num_layers: 1
+nonlinearity: tanh
+bias: True
+batch_first: True
+dropout: 0.0
+bidirectional: False

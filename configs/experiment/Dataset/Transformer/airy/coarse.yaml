@@ -1,0 +1,36 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/Transformer/base.yaml
+
+
+
+data:
+  T: 128
+  D: 1
+  rho_name: airy
+  batch_size: 128 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+  train_val_test_split: [50000, 2048, 2048]
+  inner_activation: tanh
+  output_activation: tanh
+
+run_specs:
+  task_name: "Transformer_airy_experiment"
+  tags: ["Transformer", "airy", "experiment"]
+
+
+sweeper:
+  param:
+    data.rho_param.alpha: np.linspace(0.01, 1,8).tolist()
+    module.layers.Layer1.num_layers: [1]
+    module.layers.Layer1.hid_dim: [32,64,128,256]
+    module.layers.Layer1.nhead: [1,4,8,16,32]
+    run_specs.seed: [11, 22,33,44,55]
+
+  resources:
+    cpu: 6
+    gpu: 0.49
+
+logger:
+  wandb:
+    project: "Transformer_airy_experiment"

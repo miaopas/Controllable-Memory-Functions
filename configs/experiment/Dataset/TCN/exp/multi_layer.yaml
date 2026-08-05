@@ -1,0 +1,30 @@
+# @package _global_
+
+defaults:
+  - /experiment/Dataset/TCN/base.yaml
+
+
+data:
+  T: 1024
+  D: 1
+  rho_name: exponential
+  inner_activation: tanh
+  output_activation: tanh
+run_specs:
+  task_name: "Multilayer_TCN_exp"
+  tags: ["TCN", "exp", "multilayer"]
+
+
+sweeper:
+  param:
+    data.rho_param.alpha: [0.05263158, 0.08433735, 0.11801242, 0.15384615, 0.19205298, 0.23287671, 0.27659574, 0.32352941, 0.3740458 , 0.42857139]
+    module.layers.Layer2.channel: [32]
+    module.layers.Layer2.n_layers: [2,4,6,8,10]
+    run_specs.seed: [11,22,33,44,55]
+  resources:
+    cpu: 2
+    gpu: 0.33
+
+logger:
+  wandb:
+    project: "Multilayer_TCN_exp"

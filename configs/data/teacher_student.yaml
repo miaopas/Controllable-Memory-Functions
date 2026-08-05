@@ -1,0 +1,9 @@
+_target_: ${import:TSDataModule}
+
+train_val_test_split: [16384, 2048, 2048]
+batch_size: 64
+num_workers: 0
+pin_memory: False
+T: 128
+D: 1
+input_generator: rand
