@@ -1,0 +1,12 @@
+name: smoke
+description: >
+  Tiny sanity check (seconds on a CPU). Use it to verify that a model plugs in correctly,
+  not to draw conclusions.
+T: 32
+data: {n_train: 256, n_val: 64, n_test: 64}
+training: {epochs: 2, min_epochs: 1, batch_size: 32}
+seeds: [11]
+default_sizes: [8]
+functions:
+  exponential: {alpha: [0.05263158, 0.42857139]}
+  impulse: {alpha: [0.01, 1.0]}

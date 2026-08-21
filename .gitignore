@@ -166,3 +166,7 @@ image_dir/
 results/
 old_plot_code/
 *.sif
+
+# cmf benchmark outputs
+runs/
+reports/

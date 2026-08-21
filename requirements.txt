@@ -1,6 +1,6 @@
 # --------- pytorch --------- #
-torch>=2.0.0
-torchvision>=0.15.0
+torch>=2.0.0,<2.6   # 2.6+ cannot reload Lightning checkpoints with Hydra configs (weights_only)
+torchvision>=0.15.0,<0.21
 lightning>=2.0.0
 torchmetrics>=0.11.4
 pykeops
@@ -24,3 +24,13 @@ pre-commit      # hooks for applying linters on commit
 rich            # beautiful text formatting in terminal
 pytest          # tests
 # sh            # for running bash commands in some tests (linux/macos only)
+
+# --------- analysis & cmf benchmark tool --------- #
+numpy
+scipy
+pandas
+matplotlib
+seaborn
+pyyaml
+scikit-learn
+ray[tune]

@@ -1,11 +1,8 @@
 import numpy as np
-import rootutils
 import torch
 
-rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
-
-
-from src.utils.utils import TempSeed
+# NOTE: keep this module free of heavy imports (hydra, wandb, lightning) so that the lightweight
+# `cmf` benchmark tool can use the memory-function registry directly.
 
 # # Note: nonsmooth_periodic is already suitable for sequence inputs if t is a PyTorch tensor
 # def nonsmooth_periodic_vectorized(t):
@@ -224,6 +221,8 @@ class Random(BaseRho):
         Returns:
             _type_: _description_
         """
+        from src.utils.utils import TempSeed  # lazy: src.utils pulls in hydra/wandb
+
         with TempSeed(self.seed):
             y = torch.rand(t.shape)
 

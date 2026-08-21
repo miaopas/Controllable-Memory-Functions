@@ -1,0 +1,15 @@
+name: quick
+description: >
+  Laptop/single-GPU demo suite. Four memory functions, five difficulty levels each (a subset of
+  the paper grids), short sequences (T=256) and a short training budget. About 120 trials for
+  three model sizes.
+T: 256
+data: {n_train: 4096, n_val: 512, n_test: 512}
+training: {epochs: 30, min_epochs: 5, batch_size: 64, patience: 5}
+seeds: [11, 22]
+default_sizes: [8, 16, 32]
+functions:
+  exponential: {alpha: [0.05263158, 0.11801242, 0.23287671, 0.32352941, 0.42857139]}
+  polynomial: {alpha: [0.05, 0.10555556, 0.18888889, 0.24444444, 0.3]}
+  impulse: {alpha: [0.01, 0.2575, 0.505, 0.7525, 1.0]}
+  airy: {alpha: [0.01, 0.2575, 0.505, 0.7525, 1.0]}

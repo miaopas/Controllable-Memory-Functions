@@ -1,0 +1,20 @@
+name: standard
+description: >
+  The setting of the paper (configs/experiment/Dataset/*/<function>/coarse.yaml): full
+  difficulty grids, 7 model sizes and 5 seeds per point. About 1,400 trials per model; meant for
+  a GPU cluster.
+T: 1024
+data: {n_train: 16384, n_val: 2048, n_test: 2048}
+training: {epochs: 300, min_epochs: 10, batch_size: 64, patience: 3}
+seeds: [11, 22, 33, 44, 55]
+default_sizes: [4, 8, 16, 32, 64, 128, 256]
+functions:
+  exponential:
+    alpha: [0.05263158, 0.08433735, 0.11801242, 0.15384615, 0.19205298, 0.23287671, 0.27659574, 0.32352941, 0.3740458, 0.42857139]
+  polynomial:
+    alpha: [0.05, 0.07777778, 0.10555556, 0.13333333, 0.16111111, 0.18888889, 0.21666667, 0.24444444, 0.27222222, 0.3]
+  impulse:
+    T: 256
+    alpha: [0.01, 0.15142857, 0.29285714, 0.43428571, 0.57571429, 0.71714286, 0.85857143, 1.0]
+  airy:
+    alpha: [0.01, 0.15142857, 0.29285714, 0.43428571, 0.57571429, 0.71714286, 0.85857143, 1.0]
