@@ -1,0 +1,38 @@
+name: cmf
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install (CPU-only PyTorch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[test]"
+
+      - name: Unit tests
+        run: pytest -q test/test_cmf.py
+
+      - name: Smoke suite end to end
+        run: |
+          cmf check --model examples.my_model:ResidualGRU
+          cmf run --model examples.my_model:ResidualGRU --suite smoke --workers 2 \
+            --report reports/smoke.html --pdf reports/smoke.pdf --baselines all
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: reports/

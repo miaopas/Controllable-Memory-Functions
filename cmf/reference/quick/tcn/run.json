@@ -1,0 +1,107 @@
+{
+  "model": "TCN",
+  "model_source": "builtin:tcn",
+  "model_kwargs": {},
+  "sizes": [
+    8,
+    16,
+    32
+  ],
+  "n_params": {
+    "8": 2329,
+    "16": 8753,
+    "32": 33889
+  },
+  "causality_check": "passed",
+  "suite": {
+    "name": "quick",
+    "T": 256,
+    "functions": [
+      {
+        "name": "exponential",
+        "alpha": [
+          0.05263158,
+          0.11801242,
+          0.23287671,
+          0.32352941,
+          0.42857139
+        ],
+        "T": null,
+        "params": {}
+      },
+      {
+        "name": "polynomial",
+        "alpha": [
+          0.05,
+          0.10555556,
+          0.18888889,
+          0.24444444,
+          0.3
+        ],
+        "T": null,
+        "params": {}
+      },
+      {
+        "name": "impulse",
+        "alpha": [
+          0.01,
+          0.2575,
+          0.505,
+          0.7525,
+          1.0
+        ],
+        "T": null,
+        "params": {}
+      },
+      {
+        "name": "airy",
+        "alpha": [
+          0.01,
+          0.2575,
+          0.505,
+          0.7525,
+          1.0
+        ],
+        "T": null,
+        "params": {}
+      }
+    ],
+    "data": {
+      "n_train": 4096,
+      "n_val": 512,
+      "n_test": 512,
+      "input_generator": "randn",
+      "inner_activation": "tanh",
+      "output_activation": "tanh"
+    },
+    "training": {
+      "epochs": 30,
+      "min_epochs": 5,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0,
+      "scheduler": "cosine",
+      "patience": 5,
+      "grad_clip": null
+    },
+    "seeds": [
+      11,
+      22
+    ],
+    "default_sizes": [
+      8,
+      16,
+      32
+    ],
+    "metric": "train_rloss_min",
+    "description": "Laptop/single-GPU demo suite. Four memory functions, five difficulty levels each (a subset of the paper grids), short sequences (T=256) and a short training budget. About 120 trials for three model sizes."
+  },
+  "suite_name": "quick",
+  "suite_fingerprint": "1e08927173",
+  "device": "cpu",
+  "torch": "2.15.0",
+  "python": "3.11.15",
+  "cmf": "0.1.0",
+  "n_trials": 120,
+  "wall_time_s": 4851.1
+}

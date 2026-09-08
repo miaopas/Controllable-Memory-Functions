@@ -1,0 +1,26 @@
+#!/bin/bash
+# Split a cmf suite over a PBS Pro array job; every sub-job runs 1/N of the trials.
+#
+#   qsub examples/cluster/pbs_array.pbs
+#   qsub -v MODEL=lstm,SUITE=quick -J 0-3 examples/cluster/pbs_array.pbs
+#
+# (Torque/OpenPBS use "-t 0-15" and $PBS_ARRAYID instead of "-J" and $PBS_ARRAY_INDEX.)
+# Set N to the number of sub-jobs. When all are done:
+#
+#   cmf report runs/ResidualGRU_standard --baselines all --out reports/ResidualGRU.html
+#
+#PBS -N cmf
+#PBS -J 0-15
+#PBS -l select=1:ncpus=4:ngpus=1:mem=16gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+
+set -euo pipefail
+MODEL=${MODEL:-examples.my_model:ResidualGRU}
+SUITE=${SUITE:-standard}
+N=${N:-16}
+
+cd "${PBS_O_WORKDIR}"
+# Activate your environment here, e.g.:  source .venv/bin/activate
+cmf run --model "${MODEL}" --suite "${SUITE}" --device auto \
+    --shard "${PBS_ARRAY_INDEX}/${N}"

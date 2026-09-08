@@ -17,7 +17,10 @@ Quick start (Python)::
     lstm = cmf.run("lstm", suite="quick", sizes=[8, 16, 32])
     cmf.report([run, lstm], out="reports/mygru.html")
 
-See ``python -m cmf --help`` for the command line.
+    # or compare against the bundled baseline results without re-training them:
+    cmf.report([run], out="reports/mygru.html", baselines="all", pdf="reports/mygru.pdf")
+
+See ``cmf --help`` (or ``python -m cmf --help``) for the command line.
 """
 
 from __future__ import annotations
@@ -25,18 +28,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # The tool reuses the research code in ``src/`` (memory functions, data generator, models).
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from typing import Callable, Optional, Sequence, Union  # noqa: E402
+from typing import Callable, Optional, Sequence, Tuple, Union  # noqa: E402
 
 from torch import nn  # noqa: E402
 
 from .spec import ModelSpec, check_model, from_callable, resolve_model  # noqa: E402
+from .reference import available_references, reference_runs  # noqa: E402
 from .suite import Suite, available_suites, load_suite  # noqa: E402
 
 
@@ -50,6 +54,9 @@ def run(
     device: str = "auto",
     workers: int = 1,
     size_arg: Optional[str] = None,
+    shard: Optional[Tuple[int, int]] = None,
+    backend: str = "local",
+    ray_options: Optional[dict] = None,
     **model_kwargs,
 ) -> Path:
     """Benchmark a model and return its run directory.
@@ -60,6 +67,8 @@ def run(
 
     ``workers > 1`` trains that many trials in parallel CPU processes (one thread each), which is
     usually the fastest option for the small models in the ``smoke``/``quick`` suites.
+    ``backend="ray"`` runs trials as Ray tasks (``ray_options``: address, cpus_per_trial,
+    gpus_per_trial, runtime_env). ``shard=(i, n)`` runs every n-th trial starting at i.
     """
     from .runner import run_benchmark
 
@@ -71,18 +80,25 @@ def run(
         spec = from_callable(name or getattr(model, "__name__", "model"), model,
                              size_arg=size_arg, kwargs=model_kwargs)
     return run_benchmark(spec, suite=suite, sizes=sizes, out_dir=out_dir, device=device,
-                         workers=workers)
+                         workers=workers, shard=shard, backend=backend, ray_options=ray_options)
 
 
 def report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "report.html",
-           primary: Optional[str] = None, metric: Optional[str] = None) -> Path:
-    """Build an HTML comparison report from one or more run directories."""
-    from .report import build_report
+           primary: Optional[str] = None, metric: Optional[str] = None,
+           baselines: Union[str, Sequence[str], None] = None,
+           pdf: Union[str, Path, None] = None) -> Path:
+    """Build an HTML comparison report (and optionally a PDF) from one or more run directories.
 
-    return build_report(run_dirs, out=out, primary=primary, metric=metric)
+    ``baselines="all"`` (or e.g. ``["lstm", "tcn"]``) adds the bundled reference results for the
+    same suite, so you only need to run your own model.
+    """
+    from .reporting import build_report
+
+    return build_report(run_dirs, out=out, primary=primary, metric=metric, baselines=baselines,
+                        pdf=pdf)
 
 
 __all__ = [
     "run", "report", "ModelSpec", "Suite", "check_model", "resolve_model", "from_callable",
-    "load_suite", "available_suites", "__version__",
+    "load_suite", "available_suites", "available_references", "reference_runs", "__version__",
 ]

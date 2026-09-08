@@ -170,3 +170,4 @@ old_plot_code/
 # cmf benchmark outputs
 runs/
 reports/
+!cmf/reference/**/*.csv

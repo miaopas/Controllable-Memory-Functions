@@ -1,6 +1,10 @@
 """Local runner: plan the trial grid, train each trial in-process, write results incrementally.
 
 Re-running with the same output directory resumes: finished trials are skipped.
+
+Backends: ``workers=1`` (one process), ``workers>1`` (parallel CPU processes), ``backend="ray"``
+(Ray tasks, for GPUs or clusters). ``shard=(i, n)`` runs every n-th trial starting at i, so an
+array job (Slurm, PBS) can split a suite; all shards write to the same run directory.
 """
 
 from __future__ import annotations
@@ -14,13 +18,13 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import torch
 
 from . import __version__
 from .data import make_task
-from .results import append_row, completed_keys, read_meta, trial_key, write_meta
+from .results import append_row, completed_keys, read_meta, results_file, trial_key, write_meta
 from .spec import ModelSpec, check_model, count_parameters
 from .suite import Suite, load_suite
 from .training import pick_device, train_trial
@@ -79,17 +83,32 @@ def run_benchmark(
     resume: bool = True,
     workers: int = 1,
     log: Callable[[str], None] = print,
+    shard: Optional[Tuple[int, int]] = None,
+    backend: str = "local",
+    ray_options: Optional[dict] = None,
 ) -> Path:
     """Benchmark one model on a suite. Returns the run directory.
 
     With ``workers > 1`` trials run in parallel CPU processes (one thread each); ``device="auto"``
-    then means CPU.
+    then means CPU. ``backend="ray"`` submits trials as Ray tasks (``ray_options``: ``address``,
+    ``cpus_per_trial``, ``gpus_per_trial``, ``runtime_env``).
     """
     suite = load_suite(suite)
     sizes = [int(s) for s in (sizes or suite.default_sizes)]
     out = Path(out_dir or Path("runs") / f"{spec.name}_{suite.name}")
     workers = max(1, int(workers))
-    dev = torch.device("cpu") if (workers > 1 and device == "auto") else pick_device(device)
+    if backend not in ("local", "ray"):
+        raise ValueError(f"unknown backend {backend!r} (local | ray)")
+    if shard is not None:
+        i, n = int(shard[0]), int(shard[1])
+        if not (n >= 1 and 0 <= i < n):
+            raise ValueError(f"shard must be I/N with 0 <= I < N, got {i}/{n}")
+        shard = (i, n)
+    ray_options = dict(ray_options or {})
+    if backend == "ray":
+        dev = torch.device("cuda" if ray_options.get("gpus_per_trial", 0) > 0 else "cpu")
+    else:
+        dev = torch.device("cpu") if (workers > 1 and device == "auto") else pick_device(device)
 
     old = read_meta(out)
     if old and resume and old.get("suite_fingerprint") not in (None, suite.fingerprint):
@@ -108,8 +127,10 @@ def run_benchmark(
     n_params = {c["width"]: c["n_params"] for c in checks}
 
     trials = plan_trials(suite, sizes)
+    mine = trials if shard is None else trials[shard[0]::shard[1]]
     done = completed_keys(out) if resume else set()
-    todo = [t for t in trials if trial_key(t) not in done]
+    todo = [t for t in mine if trial_key(t) not in done]
+    filename = results_file(shard)
 
     meta = {
         "model": spec.name,
@@ -130,22 +151,24 @@ def run_benchmark(
     }
     write_meta(out, meta)
 
-    log(f"[cmf] {spec.name} on suite '{suite.name}': {len(trials)} trials "
-        f"({len(trials) - len(todo)} already done), sizes={sizes}, device={dev}, workers={workers}")
+    where = f"workers={workers}" if backend == "local" else f"backend=ray {ray_options}"
+    part = "" if shard is None else f" (shard {shard[0]}/{shard[1]}: {len(mine)} of them)"
+    log(f"[cmf] {spec.name} on suite '{suite.name}': {len(trials)} trials{part}, "
+        f"{len(mine) - len(todo)} already done, sizes={sizes}, device={dev}, {where}")
     log(f"[cmf] parameters per size: {n_params}")
-    log(f"[cmf] writing to {out}/results.csv")
+    log(f"[cmf] writing to {out}/{filename}")
 
     t0 = time.perf_counter()
 
     def _done(i: int, row: dict) -> None:
-        append_row(out, row)
+        append_row(out, row, filename)
         elapsed = time.perf_counter() - t0
         eta = elapsed / i * (len(todo) - i)
         log(f"[{i:>4}/{len(todo)}] {row['memory_function']:<12} a={row['alpha']:<10.4g} "
             f"m={row['size']:<4} seed={row['seed']:<3} rLoss={row['train_rloss_min']:.3e} "
             f"({row['epochs']} ep, {row['wall_time_s']:.1f}s)  eta {_fmt_time(eta)}")
 
-    if workers > 1 and len(todo) > 1:
+    if backend == "local" and workers > 1 and len(todo) > 1:
         try:
             pickle.dumps(spec)
         except Exception as exc:
@@ -153,7 +176,16 @@ def run_benchmark(
                 "Define the model class at module level to enable --workers.")
             workers = 1
     finished = 0
-    if workers > 1 and len(todo) > 1:
+    if backend == "ray" and todo:
+        from .ray_backend import run_trials_ray
+
+        def _on_done(row: dict) -> None:
+            nonlocal finished
+            finished += 1
+            _done(finished, row)
+
+        run_trials_ray(spec, todo, suite, _on_done, **ray_options)
+    elif workers > 1 and len(todo) > 1:
         ctx = multiprocessing.get_context("spawn")
         try:
             with ProcessPoolExecutor(max_workers=workers, mp_context=ctx,

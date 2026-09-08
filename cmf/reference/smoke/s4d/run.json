@@ -1,0 +1,70 @@
+{
+  "model": "S4D",
+  "model_source": "builtin:s4d",
+  "model_kwargs": {},
+  "sizes": [
+    8
+  ],
+  "n_params": {
+    "8": 1225
+  },
+  "causality_check": "passed",
+  "suite": {
+    "name": "smoke",
+    "T": 32,
+    "functions": [
+      {
+        "name": "exponential",
+        "alpha": [
+          0.05263158,
+          0.42857139
+        ],
+        "T": null,
+        "params": {}
+      },
+      {
+        "name": "impulse",
+        "alpha": [
+          0.01,
+          1.0
+        ],
+        "T": null,
+        "params": {}
+      }
+    ],
+    "data": {
+      "n_train": 256,
+      "n_val": 64,
+      "n_test": 64,
+      "input_generator": "randn",
+      "inner_activation": "tanh",
+      "output_activation": "tanh"
+    },
+    "training": {
+      "epochs": 2,
+      "min_epochs": 1,
+      "batch_size": 32,
+      "lr": 0.001,
+      "weight_decay": 0.0,
+      "scheduler": "cosine",
+      "patience": 5,
+      "grad_clip": null
+    },
+    "seeds": [
+      11
+    ],
+    "default_sizes": [
+      8
+    ],
+    "metric": "train_rloss_min",
+    "description": "Tiny sanity check (seconds on a CPU). Use it to verify that a model plugs in correctly, not to draw conclusions."
+  },
+  "suite_name": "smoke",
+  "suite_fingerprint": "9c3d4db9e8",
+  "device": "mps",
+  "torch": "2.15.0",
+  "python": "3.11.15",
+  "cmf": "0.2.0",
+  "n_trials": 4,
+  "wall_time_s": 6.7
+}

@@ -62,10 +62,21 @@ def test_builtin_suites_load():
         assert s.functions and all(f.alpha for f in s.functions)
 
 
-@pytest.mark.parametrize("name", ["lstm", "gru", "tcn", "transformer"])
+@pytest.mark.parametrize("name", ["lstm", "gru", "tcn", "transformer", "s4d", "mamba"])
 def test_builtins_satisfy_contract(name):
     info = check_model(resolve_model(name), 8, T=32)
     assert info["causal"] and info["n_params"] > 0
+
+
+def test_selective_scan_matches_loop():
+    from cmf.models import selective_scan
+
+    a, b = torch.rand(2, 37, 3, 4), torch.randn(2, 37, 3, 4)
+    h, ref = torch.zeros(2, 3, 4), []
+    for t in range(37):
+        h = a[:, t] * h + b[:, t]
+        ref.append(h)
+    assert torch.allclose(selective_scan(a, b, chunk=8), torch.stack(ref, 1), atol=1e-5)
 
 
 def test_causality_check_rejects_bidirectional():
@@ -124,3 +135,35 @@ def test_data_matches_definition():
     ref = torch.stack([torch.tanh(sum(rho[s] * u[:, t - s] for s in range(t + 1)))
                        for t in range(16)], dim=1)
     assert torch.allclose(y, ref, atol=1e-5)
+
+
+def test_shards_split_and_merge(tmp_path):
+    out = tmp_path / "sharded"
+    for i in range(3):
+        cmf.run("lstm", suite=TINY, sizes=[4], out_dir=out, shard=(i, 3))
+    assert len(list(out.glob("results.shard-*-of-3.csv"))) == 3
+    df, _ = load_runs([out])
+    assert len(df) == 4 and df.groupby(["memory_function", "alpha"]).size().eq(1).all()
+    # an unsharded resume sees every shard's trials as finished
+    cmf.run("lstm", suite=TINY, sizes=[4], out_dir=out)
+    assert not (out / "results.csv").exists()
+
+
+def test_report_with_bundled_baselines_and_pdf(tmp_path):
+    from cmf.reference import available_references
+
+    if "smoke" not in available_references():
+        pytest.skip("no bundled smoke references")
+    smoke = load_suite("smoke")
+    run = cmf.run(Causal, name="Causal", suite=smoke, sizes=[8], out_dir=tmp_path / "c")
+    out = cmf.report([run], out=tmp_path / "r.html", baselines="all", pdf=tmp_path / "r.pdf")
+    html = out.read_text()
+    assert "bundled baseline" in html and "LSTM" in html
+    assert (tmp_path / "r.pdf").read_bytes()[:5] == b"%PDF-"
+
+
+def test_ray_backend(tmp_path):
+    pytest.importorskip("ray")
+    run = cmf.run("lstm", suite=TINY, sizes=[4], out_dir=tmp_path / "ray", backend="ray",
+                  ray_options={"cpus_per_trial": 1})
+    assert len(load_runs([run])[0]) == 4

@@ -7,13 +7,15 @@
 <a href="https://pytorch.org/get-started/locally/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white"></a>
 <a href="https://lightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
 <a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
+<a href="https://github.com/miaopas/Controllable-Memory-Functions/actions/workflows/cmf.yml"><img alt="cmf CI" src="https://github.com/miaopas/Controllable-Memory-Functions/actions/workflows/cmf.yml/badge.svg"></a>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
 
 </div>
 
 > **Bring a model, get a comparison report.** The `cmf` tool trains your PyTorch model on
-> every memory function and difficulty level, then compares it with LSTM, GRU, TCN and
-> Transformer baselines in one HTML report. See [Benchmark your own model](#benchmark-your-own-model).
+> every memory function and difficulty level, then compares it with LSTM, GRU, TCN,
+> Transformer, S4D and Mamba baselines in one HTML (and PDF) report. Baseline results are
+> bundled, so you only train your own model. See [Benchmark your own model](#benchmark-your-own-model).
 > The full paper experiments are also here (see [Paper experiments](#paper-experiments-hydra-pipeline)).
 
 ---
@@ -67,7 +69,7 @@ In the generated data the stored model input is already $u_t = \sigma_{\text{in}
 | Recurrent | LSTM, GRU, linear / diagonal / gated RNN | `src/modules/layers/{rnn,gru,diagRNN}.py`, `torch.nn.LSTM` |
 | Convolutional | TCN, dilated CNN | `src/modules/layers/tcn.py` |
 | Attention | Transformer, relative-position Transformer | `src/modules/layers/{transformer,RPETransformer}.py` |
-| State space | S4 / S4D, Mamba | `src/modules/layers/{s4,multi_s4,mamba}.py` |
+| State space | S4 / S4D, Mamba | `src/modules/layers/{s4,multi_s4,mamba}.py`; pure-PyTorch S4D and Mamba for `cmf` in [`cmf/models.py`](cmf/models.py) |
 | Mixed | any two of the above stacked (e.g. `LSTM_S4`) | `configs/module/lit_module/mix_model/` |
 
 Every model is wrapped as `Linear(1→m) → model → Linear(m→1)`, where *m* is the
@@ -113,22 +115,26 @@ pip install -r requirements.txt
 **Option C: container (HPC)**: build `apptainer1.def`. See
 [`scripts/helpers.sh`](scripts/helpers.sh).
 
-**Option D: only the benchmark tool (`cmf`)**: it needs neither Hydra, Ray, Lightning nor W&B:
+**Option D: only the benchmark tool (`cmf`)**: it needs neither Hydra, Lightning nor W&B.
+This installs the `cmf` command (dependencies: torch, numpy, scipy, pandas, matplotlib, pyyaml):
 
 ```bash
-pip install torch numpy scipy pandas matplotlib pyyaml
+pip install -e .
 ```
 
-Some models need extra compiled packages: S4 can use `pykeops` or the CUDA
-kernels in `extensions/kernels/`, and Mamba needs `mamba-ssm`. LSTM, TCN and
-Transformer work with plain PyTorch.
+Add `".[ray]"` for the Ray backend (GPUs, clusters) and `".[test]"` for the tests.
+
+In the paper pipeline, some models need extra compiled packages: S4 can use `pykeops` or the
+CUDA kernels in `extensions/kernels/`, and Mamba needs `mamba-ssm`. The `cmf` builtins
+(including S4D and Mamba) are plain PyTorch.
 
 ## Benchmark your own model
 
 The `cmf` package (in [`cmf/`](cmf/)) trains a model on every memory function
 and difficulty level of a *suite*, then compares it with baselines in a
-self-contained HTML report. It uses the paper's memory functions and data
-generator, and mirrors the paper's training recipe.
+self-contained HTML report (optionally also a PDF). It uses the paper's memory functions
+and data generator, and mirrors the paper's training recipe. After `pip install -e .` the
+command is `cmf`; `python -m cmf` works without installing.
 
 **1. Write the model.** Any `torch.nn.Module` built from a width `m` that maps
 `(batch, T, m) → (batch, T, m)` and is **causal**: the output at step *t* may only
@@ -155,24 +161,27 @@ class ResidualGRU(nn.Module):
 by perturbing the input at one time step and verifying that earlier outputs don't move:
 
 ```bash
-python -m cmf check --model examples.my_model:ResidualGRU --size-arg width
+cmf check --model examples.my_model:ResidualGRU --size-arg width
 ```
 
-**3. Benchmark it and a baseline.** `--size-arg` names the constructor argument that
-receives the width; `--workers` runs trials in parallel CPU processes:
-
-```bash
-python -m cmf run --model examples.my_model:ResidualGRU --size-arg width --suite quick --workers 8
-```
-```bash
-python -m cmf run --model lstm --suite quick --workers 8
-```
-
-**4. Build the report.** The first run directory is "your model":
+**3. Benchmark it.** `--size-arg` names the constructor argument that receives the width
+(the default is the first positional argument); `--workers` runs trials in parallel CPU
+processes:
 
 ```bash
-python -m cmf report runs/ResidualGRU_quick runs/LSTM_quick --out reports/residual_gru.html
+cmf run --model examples.my_model:ResidualGRU --size-arg width --suite quick --workers 8
 ```
+
+**4. Build the report** against the bundled baseline results for the same suite. The first
+run directory is "your model":
+
+```bash
+cmf report runs/ResidualGRU_quick --baselines all --out reports/residual_gru.html --pdf reports/residual_gru.pdf
+```
+
+`--baselines lstm,tcn` picks specific ones. To compare with baselines trained on your own
+hardware or widths, run them like any model (`cmf run --model lstm --suite quick`) and list
+their run directories instead: `cmf report runs/ResidualGRU_quick runs/LSTM_quick`.
 
 The same from Python:
 
@@ -182,28 +191,42 @@ from examples.my_model import ResidualGRU
 
 if __name__ == "__main__":   # needed when workers > 1
     mine = cmf.run(ResidualGRU, name="ResidualGRU", suite="quick", workers=8)
-    lstm = cmf.run("lstm", suite="quick", workers=8)
-    cmf.report([mine, lstm], out="reports/residual_gru.html")
+    cmf.report([mine], out="reports/residual_gru.html", baselines="all",
+               pdf="reports/residual_gru.pdf")
 ```
 
-`python -m cmf list` shows the suites, builtin models and memory functions.
+`cmf list` shows the suites, builtin models, bundled reference results and memory functions.
 
 ### Suites
 
 | Suite | Memory functions × α levels | Widths | Seeds | T | Epochs | Trials (default widths) | Use |
 |---|---|---|---|---|---|---|---|
 | `smoke` | exp, impulse × 2 | 8 | 1 | 32 | 2 | 4 | does my model plug in? (seconds) |
-| `quick` | exp, poly, impulse, airy × 5 | 8, 16, 32 | 2 | 256 | ≤ 30 | 120 | demo / development (laptop) |
+| `quick` | exp, poly, impulse, airy × 5 | 8, 16, 32 | 2 | 256 | ≤ 30 | 120 | demo / development (laptop: about 20 min for a GRU-sized model, 1 h for TCN, with 8 workers on an M4 CPU) |
 | `standard` | exp, poly, impulse, airy × 8–10 (paper grids) | 4 … 256 | 5 | 1024 (impulse 256) | ≤ 300 | 1,260 | paper setting (GPU cluster) |
 
 A suite is a small YAML file. Copy [`cmf/suites/quick.yaml`](cmf/suites/quick.yaml)
 to define your own (other functions, α grids, T or budgets) and pass its path to `--suite`.
 
-### Builtin baselines
+### Builtin baselines and bundled results
 
-`lstm`, `gru` (PyTorch, one layer), `tcn` (the paper's dilated causal CNN, 8 levels) and
-`transformer` (one-layer causal Transformer with sinusoidal positions).
-Benchmark them with `--model <name>`, exactly like your own model.
+| `--model` | What it is |
+|---|---|
+| `lstm`, `gru` | `torch.nn.LSTM` / `torch.nn.GRU`, one layer |
+| `tcn` | the paper's dilated causal CNN ([`src/modules/layers/tcn.py`](src/modules/layers/tcn.py)), 8 levels |
+| `transformer` | one-layer causal Transformer, sinusoidal positions |
+| `s4d` | one pre-norm S4D block (diagonal state space, FFT convolution), pure PyTorch |
+| `mamba` | one pre-norm Mamba block (selective state space, exact chunked scan), pure PyTorch |
+
+Benchmark them with `--model <name>`, exactly like your own model. `s4d` and `mamba` are
+compact re-implementations in [`cmf/models.py`](cmf/models.py), not the official kernels;
+the pure-PyTorch Mamba scan is several times slower than an LSTM on CPU.
+
+Results for the builtins are bundled in [`cmf/reference/`](cmf/reference/) and used by
+`--baselines`: the `smoke` suite for all six, and the `quick` suite for LSTM and TCN so far
+(widths 8, 16, 32; CPU). Reference results for `standard` need a GPU cluster and are not
+bundled yet. If your run uses different suite settings, the report warns that the comparison
+is not like-for-like.
 
 ### Outputs
 
@@ -212,6 +235,30 @@ function, α, width, seed, parameter count, best train/val loss and relative los
 loss, epochs, wall time) and `run.json` (model, suite, environment). Interrupted runs
 resume where they stopped. The headline metric is the best training relative MSE,
 MSE / Var(y), as in the paper; `cmf report --metric val_rloss_min` switches to validation.
+`--pdf` writes a PDF version of the report: a summary page with the key findings and the
+sensitivity table, then one page per figure.
+
+### GPUs and clusters
+
+The `standard` suite has 1,260 trials per model, which is a job for a GPU machine or a cluster.
+Two ways to split it up, both writing into the same run directory and both resumable:
+
+- **Ray** (`pip install -e ".[ray]"`): every trial is a Ray task. On one machine,
+  `cmf run --model ... --suite standard --backend ray --gpus-per-trial 0.25` packs four trials
+  onto each GPU; add `--ray-address auto` to use an existing Ray cluster.
+  See [`examples/cluster/ray.sh`](examples/cluster/ray.sh).
+- **Array jobs** (Slurm, PBS): `--shard I/N` runs every N-th trial starting at I, so N array
+  tasks cover the suite. See [`examples/cluster/slurm_array.sh`](examples/cluster/slurm_array.sh)
+  and [`examples/cluster/pbs_array.pbs`](examples/cluster/pbs_array.pbs).
+
+Then build the report from the run directory as usual.
+
+### Tests and CI
+
+`pytest test/test_cmf.py` runs the unit tests (about 30 s on a laptop). GitHub Actions
+([`.github/workflows/cmf.yml`](.github/workflows/cmf.yml)) runs them on every push, then runs
+the `smoke` suite end to end on the example model and uploads the HTML and PDF report as a
+build artifact.
 
 **Training recipe** (all models, all suites): Adam (lr 1e-3), cosine learning-rate
 decay over the epoch budget, batch size 64, early stopping on the training loss, and
@@ -328,12 +375,15 @@ them from W&B (see `notebooks/Dataset/step1/get_data.py`).
 ## Repository layout
 
 ```
-├── cmf/                    benchmark tool: bring a model → HTML comparison report
+├── cmf/                    benchmark tool: bring a model → HTML/PDF comparison report
 │   ├── suites/               smoke.yaml, quick.yaml, standard.yaml
+│   ├── reference/            bundled baseline results (<suite>/<model>/results.csv)
 │   ├── spec.py               model contract, wrapper, causality check
-│   ├── runner.py, training.py, data.py   local (parallel) runner
-│   └── analysis.py, report.py            scores, findings, HTML report
-├── examples/my_model.py    "bring your own model" example
+│   ├── builtins.py, models.py            baselines (incl. pure-PyTorch S4D and Mamba)
+│   ├── runner.py, training.py, data.py   local (parallel / sharded) runner
+│   ├── ray_backend.py        Ray tasks for GPUs and clusters
+│   └── analysis.py, reporting.py         scores, findings, HTML and PDF report
+├── examples/               my_model.py ("bring your own model"); cluster/ (Slurm, PBS, Ray)
 ├── configs/                Hydra configs
 │   ├── data/                 lf.yaml: the memory-function dataset
 │   ├── module/               layers/, lit_module/ (model + optimiser), model/
@@ -351,6 +401,7 @@ them from W&B (see `notebooks/Dataset/step1/get_data.py`).
 ├── paper_plots/            figure scripts and PDFs from the paper
 ├── notebooks/              exploratory analysis
 ├── test/                   tests (test_cmf.py: pytest test/test_cmf.py)
+├── .github/workflows/      CI: cmf tests + smoke suite
 ├── extensions/kernels/     optional CUDA kernels for S4 (Cauchy / Vandermonde)
 ├── _submit_jobs.sh, _run_array_jobs.pbs   PBS array-job helpers
 └── apptainer1.def          container definition
@@ -359,13 +410,13 @@ them from W&B (see `notebooks/Dataset/step1/get_data.py`).
 ## Roadmap
 
 1. **Done:** the `cmf` tool: model contract with a causality check, `smoke` / `quick` /
-   `standard` suites, a parallel local runner without Ray or W&B, and an HTML
-   comparison report.
-2. **Next:** shipped reference results so baselines need not be re-run, S4 and Mamba
-   baselines, a pip-installable `cmf` command, interactive charts, and a Ray/GPU-cluster runner
-   for the `standard` suite.
+   `standard` suites, parallel local, sharded (Slurm/PBS) and Ray runners, HTML and PDF
+   comparison reports with plain-language findings, builtin baselines including S4D and
+   Mamba with bundled reference results, a pip-installable `cmf` command, and CI.
+2. **Next:** reference results for the `standard` suite (from a GPU cluster), and
+   interactive charts in the report.
 3. **Later:** user-defined memory functions from the command line, per-model learning-rate
-   search, and multi-layer and hybrid suites.
+   search, multi-layer and hybrid suites, and W&B / TensorBoard export.
 
 Contributions and issues are welcome.
 

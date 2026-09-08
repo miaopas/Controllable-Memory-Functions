@@ -68,9 +68,23 @@ def _transformer(width: int, n_layers: int = 1, n_heads: int = 0) -> nn.Module:
     return CausalTransformer(width, n_layers=n_layers, n_heads=n_heads)
 
 
+def _s4d(width: int, d_state: int = 64, n_layers: int = 1) -> nn.Module:
+    from .models import S4D
+
+    return S4D(width, d_state=d_state, n_layers=n_layers)
+
+
+def _mamba(width: int, d_state: int = 16, n_layers: int = 1) -> nn.Module:
+    from .models import Mamba
+
+    return Mamba(width, d_state=d_state, n_layers=n_layers)
+
+
 BUILTINS: Dict[str, Builtin] = {
     "lstm": Builtin("LSTM", _lstm, "torch.nn.LSTM, 1 layer"),
     "gru": Builtin("GRU", _gru, "torch.nn.GRU, 1 layer"),
     "tcn": Builtin("TCN", _tcn, "dilated causal CNN from the paper (src/modules/layers/tcn.py), 8 levels"),
     "transformer": Builtin("Transformer", _transformer, "1-layer causal Transformer, sinusoidal positions"),
+    "s4d": Builtin("S4D", _s4d, "1 diagonal state-space (S4D) block, pure PyTorch (cmf/models.py)"),
+    "mamba": Builtin("Mamba", _mamba, "1 Mamba selective-SSM block, pure PyTorch scan (cmf/models.py)"),
 }

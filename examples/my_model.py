@@ -3,14 +3,13 @@
 A model only needs to map (batch, T, m) -> (batch, T, m) causally. Here: a GRU with a gated
 residual connection, but anything works (SSMs, convolutions, attention, ...).
 
-Command line (from the repository root):
+Command line (from the repository root, after ``pip install -e .``):
 
-    python -m cmf check --model examples.my_model:ResidualGRU --size-arg width
-    python -m cmf run   --model examples.my_model:ResidualGRU --size-arg width --suite quick
-    python -m cmf run   --model lstm --suite quick
-    python -m cmf report runs/ResidualGRU_quick runs/LSTM_quick --out reports/residual_gru.html
+    cmf check  --model examples.my_model:ResidualGRU --size-arg width
+    cmf run    --model examples.my_model:ResidualGRU --size-arg width --suite quick --workers 8
+    cmf report runs/ResidualGRU_quick --baselines all --out reports/residual_gru.html
 
-Or run this file, which does all of the above from Python:
+Or run this file, which does the same from Python and compares against the bundled baselines:
 
     python examples/my_model.py --suite smoke
 """
@@ -45,8 +44,8 @@ if __name__ == "__main__":
     parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args()
 
-    opts = dict(suite=args.suite, sizes=args.sizes, workers=args.workers)
-    mine = cmf.run(ResidualGRU, name="ResidualGRU", **opts)
-    lstm = cmf.run("lstm", **opts)
-    path = cmf.report([mine, lstm], out=f"reports/ResidualGRU_{args.suite}.html")
-    print(f"Open {path} in a browser.")
+    mine = cmf.run(ResidualGRU, name="ResidualGRU", suite=args.suite, sizes=args.sizes,
+                   workers=args.workers)
+    out = f"reports/ResidualGRU_{args.suite}"
+    path = cmf.report([mine], out=f"{out}.html", pdf=f"{out}.pdf", baselines="all")
+    print(f"Open {path} in a browser (PDF: {out}.pdf).")

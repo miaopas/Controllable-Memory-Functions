@@ -1,9 +1,34 @@
-[tool.poetry]
+# Two uses of this file:
+#  * `pip install -e .` installs the light `cmf` benchmark tool (setuptools, [project] below);
+#    its dependencies are listed in cmf/requirements.txt.
+#  * `poetry install` installs the full research environment (Hydra/Lightning/Ray/W&B) from
+#    [tool.poetry] and poetry.lock. The [project] table only names the package and declares its
+#    dependencies dynamic, so the lock file stays valid.
+
+[project]
 name = "controllable-memory-functions"
-version = "0.1.0"
-description = "A package for benchmarking sequential architectures on sythentic datasets"
-authors = ["Haotian Jiang, Shida Wang, Zeyu Bao"]
+version = "0.2.0"
+description = "Benchmark what kinds of memory a sequence model can learn, using controllable memory functions"
 readme = "README.md"
+license = "MIT"
+authors = [{ name = "Haotian Jiang" }, { name = "Shida Wang" }, { name = "Zeyu Bao" }]
+dynamic = ["dependencies", "optional-dependencies", "requires-python"]
+
+[project.scripts]
+cmf = "cmf.cli:main"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["cmf/requirements.txt"] }
+optional-dependencies.ray = { file = ["cmf/requirements-ray.txt"] }
+optional-dependencies.test = { file = ["cmf/requirements-test.txt"] }
+
+[tool.setuptools.packages.find]
+include = ["cmf*", "src*"]
+
+[tool.setuptools.package-data]
+cmf = ["suites/*.yaml", "reference/*/*/*.csv", "reference/*/*/*.json", "*.txt"]
+
+[tool.poetry]
 package-mode = false
 
 
@@ -37,5 +62,5 @@ ipykernel = "^6.30.1"
 
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"

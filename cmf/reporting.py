@@ -71,12 +71,12 @@ def _colors(models: Sequence[str]) -> Dict[str, str]:
 def _legend_top(fig, axes, models, colors):
     handles = [plt.Line2D([], [], color=colors[m], marker="o", markersize=5, lw=2) for m in models]
     fig.tight_layout(rect=(0, 0, 1, 0.9))
-    fig.legend(handles, models, loc="upper center", ncol=min(len(models), 6),
+    fig.legend(handles, models, loc="upper center", ncol=min(len(models), 8),
                bbox_to_anchor=(0.5, 1.0))
 
 
 # --------------------------------------------------------------------------- figures
-def fig_memory_functions(suite) -> str:
+def fig_memory_functions(suite):
     from src.data.lf.rho import BaseRho
 
     fns = suite.functions
@@ -100,7 +100,7 @@ def fig_memory_functions(suite) -> str:
     fig.text(0.5, -0.06, "light → dark = easy → hard (increasing α)", ha="center",
              color=TEXT_2, fontsize=9)
     fig.tight_layout()
-    return _png(fig)
+    return fig
 
 
 def torch_arange(T: int):
@@ -109,7 +109,7 @@ def torch_arange(T: int):
     return torch.arange(T, dtype=torch.int64).repeat(1, 1)
 
 
-def fig_profile(profile: pd.DataFrame, models: List[str], functions: List[str], metric: str) -> str:
+def fig_profile(profile: pd.DataFrame, models: List[str], functions: List[str], metric: str):
     vals = profile["value"][profile["value"] > 0]
     vmin, vmax = (vals.min(), vals.max()) if len(vals) else (1e-6, 1)
     norm = LogNorm(vmin=vmin, vmax=max(vmax, vmin * 10))
@@ -141,10 +141,10 @@ def fig_profile(profile: pd.DataFrame, models: List[str], functions: List[str], 
     cb.outline.set_visible(False)
     _nice_log(cb.ax)
     fig.supxlabel("difficulty level (1 = easiest)", fontsize=9.5, color=TEXT_2, y=-0.02)
-    return _png(fig)
+    return fig
 
 
-def fig_sensitivity(sens: pd.DataFrame, models: List[str], functions: List[str], colors) -> str:
+def fig_sensitivity(sens: pd.DataFrame, models: List[str], functions: List[str], colors):
     fig, ax = plt.subplots(figsize=(1.3 * len(functions) * max(1, len(models) / 2) + 2, 3.2))
     width = 0.8 / len(models)
     for i, m in enumerate(models):
@@ -166,8 +166,8 @@ def fig_sensitivity(sens: pd.DataFrame, models: List[str], functions: List[str],
     ax.set_ylabel("loss(hardest α) / loss(easiest α)")
     ax.grid(axis="x", visible=False)
     fig.tight_layout(rect=(0, 0, 1, 0.88))
-    fig.legend(loc="upper center", ncol=min(len(models), 6), bbox_to_anchor=(0.5, 1.0))
-    return _png(fig)
+    fig.legend(loc="upper center", ncol=min(len(models), 8), bbox_to_anchor=(0.5, 1.0))
+    return fig
 
 
 def _small_multiples(functions):
@@ -176,7 +176,7 @@ def _small_multiples(functions):
     return fig, axes[0]
 
 
-def fig_loss_vs_alpha(best: pd.DataFrame, models, functions, colors, metric) -> str:
+def fig_loss_vs_alpha(best: pd.DataFrame, models, functions, colors, metric):
     fig, axes = _small_multiples(functions)
     for ax, fn in zip(axes, functions):
         for m in models:
@@ -192,10 +192,10 @@ def fig_loss_vs_alpha(best: pd.DataFrame, models, functions, colors, metric) -> 
         ax.set_xlabel("α (memory difficulty)")
     axes[0].set_ylabel("best loss over sizes")
     _legend_top(fig, axes, models, colors)
-    return _png(fig)
+    return fig
 
 
-def fig_loss_vs_size(best: pd.DataFrame, models, functions, colors) -> str:
+def fig_loss_vs_size(best: pd.DataFrame, models, functions, colors):
     fig, axes = _small_multiples(functions)
     for ax, fn in zip(axes, functions):
         for m in models:
@@ -214,7 +214,7 @@ def fig_loss_vs_size(best: pd.DataFrame, models, functions, colors) -> str:
         ax.set_xlabel("model width m")
     axes[0].set_ylabel("best loss over seeds")
     _legend_top(fig, axes, models, colors)
-    return _png(fig)
+    return fig
 
 
 # --------------------------------------------------------------------------- html helpers
@@ -245,6 +245,73 @@ def _table(headers: List[str], rows: List[List[str]], cls: str = "") -> str:
 
 def _img(b64: str, alt: str) -> str:
     return f'<img src="data:image/png;base64,{b64}" alt="{html.escape(alt)}">'
+
+
+def _param_range(params: Dict) -> str:
+    lo, hi = min(params.values()), max(params.values())
+    return f"{lo:,}" if lo == hi else f"{lo:,}–{hi:,}"
+
+
+def _plain(text: str) -> str:
+    """Strip the light markdown used in findings (for the PDF)."""
+    return re.sub(r"\*{1,2}(.+?)\*{1,2}", r"\1", text)
+
+
+def _pdf_summary_page(title: str, subtitle: str, models: List[str], colors, meta_by_model,
+                      notes: List[str], sens_rows: List[List[str]], sens_header: List[str]):
+    """First PDF page: title, models, key findings and the sensitivity table."""
+    import textwrap
+
+    fig = plt.figure(figsize=(8.27, 11.69))  # A4 portrait
+    fig.patch.set_facecolor("white")
+    y = 0.95
+    fig.text(0.07, y, title, fontsize=18, weight="bold", va="top")
+    y -= 0.035
+    fig.text(0.07, y, subtitle, fontsize=10, color=TEXT_2, va="top")
+    y -= 0.045
+    for m in models:
+        meta = meta_by_model[m]
+        params = meta.get("n_params", {})
+        prange = _param_range(params) + " params" if params else ""
+        fig.patches.append(plt.Rectangle((0.07, y - 0.012), 0.012, 0.009, color=colors[m],
+                                         transform=fig.transFigure, figure=fig))
+        role = "your model" if m == models[0] else ("bundled baseline" if meta.get("reference") else "baseline")
+        fig.text(0.09, y, f"{m}  ({role}; widths {', '.join(map(str, meta.get('sizes', [])))}; {prange})",
+                 fontsize=10, va="top")
+        y -= 0.022
+    y -= 0.02
+    fig.text(0.07, y, "Key findings", fontsize=13, weight="bold", va="top")
+    y -= 0.03
+    for n in notes:
+        lines = textwrap.wrap(_plain(n), 95)
+        for j, line in enumerate(lines):
+            fig.text(0.07 if j == 0 else 0.085, y, ("• " if j == 0 else "") + line, fontsize=9.5, va="top")
+            y -= 0.018
+        y -= 0.006
+    y -= 0.02
+    if sens_rows and y > 0.15:
+        fig.text(0.07, y, "Difficulty sensitivity (loss at hardest α ÷ loss at easiest α)",
+                 fontsize=13, weight="bold", va="top")
+        y -= 0.025
+        h = 0.022 * (len(sens_rows) + 1)
+        ax = fig.add_axes((0.07, y - h, 0.86, h))
+        ax.axis("off")
+        first = 0.18
+        widths = [first] + [(1 - first) / (len(sens_header) - 1)] * (len(sens_header) - 1)
+        tbl = ax.table(cellText=sens_rows, colLabels=sens_header, loc="upper left", cellLoc="right",
+                       colLoc="right", colWidths=widths)
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(9 if len(sens_header) <= 6 else 7.5)
+        for (r, c), cell in tbl.get_celld().items():
+            cell.set_edgecolor(GRID)
+            if c == 0:
+                cell.set_text_props(ha="left")
+                cell._loc = "left"
+            if r == 0:
+                cell.set_text_props(color=TEXT_2, weight="bold")
+    fig.text(0.07, 0.03, "Generated by cmf (Controllable Memory Functions). Figures follow on the next pages.",
+             fontsize=8, color=TEXT_2)
+    return fig
 
 
 CSS = """
@@ -280,8 +347,25 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
 
 # --------------------------------------------------------------------------- report
 def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "report.html",
-                 primary: Optional[str] = None, metric: Optional[str] = None) -> Path:
+                 primary: Optional[str] = None, metric: Optional[str] = None,
+                 baselines=None, pdf: Union[str, Path, None] = None) -> Path:
+    """Write the HTML report to ``out`` (and a PDF to ``pdf`` if given). Returns the HTML path.
+
+    ``baselines``: "all" or builtin keys (e.g. ``["lstm", "tcn"]``) of bundled reference results for
+    the same suite, added after ``run_dirs``.
+    """
+    from .reference import REFERENCE_ROOT, resolve_baselines
+    from .results import read_meta
+
+    run_dirs = [Path(d) for d in run_dirs]
+    if baselines:
+        given = {read_meta(d).get("model") for d in run_dirs}
+        suite_name = read_meta(run_dirs[0]).get("suite_name")
+        run_dirs += [d for d in resolve_baselines(suite_name, baselines)
+                     if read_meta(d).get("model") not in given]
     df, metas = load_runs(run_dirs)
+    for m in metas:
+        m["reference"] = REFERENCE_ROOT in Path(m["run_dir"]).resolve().parents
     models = list(dict.fromkeys(m["model"] for m in metas))  # order of the given run dirs
     if primary:
         if primary not in models:
@@ -306,6 +390,29 @@ def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "
     counts = A.n_trials(df)
     meta_by_model = {m["model"]: m for m in metas}
 
+    sens_rows = []
+    for fn in functions:
+        row = [A.label(fn)]
+        for m in models:
+            s_ = sens[(sens["model"] == m) & (sens["memory_function"] == fn)]
+            row.append("–" if s_.empty else f"×{_num(1 + s_['score'].iloc[0], '{:.3g}')}")
+        sens_rows.append(row)
+
+    pages = None
+    if pdf is not None:
+        from matplotlib.backends.backend_pdf import PdfPages
+
+        pdf = Path(pdf)
+        pdf.parent.mkdir(parents=True, exist_ok=True)
+        pages = PdfPages(pdf)
+
+    def emit(fig, alt: str) -> str:
+        if pages is not None:
+            title = fig.text(0.01, 1.08, alt, ha="left", va="bottom", fontsize=12, weight="bold")
+            pages.savefig(fig, bbox_inches="tight", pad_inches=0.3)
+            title.remove()
+        return _img(_png(fig), alt)
+
     # ---- header + summary cards
     when = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     parts = [f"<h1>Memory benchmark: {html.escape(primary)}</h1>",
@@ -319,10 +426,10 @@ def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "
     for m in models:
         meta, c = meta_by_model[m], counts.get(m, {"total": 0, "ok": 0, "wall_time_s": 0})
         params = meta.get("n_params", {})
-        prange = (f"{min(params.values()):,}–{max(params.values()):,}" if params else "?")
+        prange = _param_range(params) if params else "?"
         cards.append(
             f'<div class="card"><div class="k"><span class="swatch" style="background:{colors[m]}"></span>'
-            f'{"your model" if m == primary else "baseline"}</div><div class="v">{html.escape(m)}</div>'
+            f'{"your model" if m == primary else ("bundled baseline" if meta.get("reference") else "baseline")}</div><div class="v">{html.escape(m)}</div>'
             f'<div class="note">widths {", ".join(map(str, meta.get("sizes", [])))} · {prange} params<br>'
             f'{c["ok"]}/{meta.get("n_trials", c["total"])} trials · {_fmt_secs(c["wall_time_s"])} on {meta.get("device", "?")}<br>'
             f'causality check: {meta.get("causality_check", "?")}</div></div>')
@@ -345,38 +452,37 @@ def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "
         "The memory function ρ decides which past inputs matter. Each function has a difficulty "
         "parameter α; larger α means longer or harder memory. Below are the memory functions in this "
         "suite at the difficulty levels tested.</p>")
-    parts.append(_img(fig_memory_functions(suite), "Memory functions at each tested difficulty"))
+    if pages is not None:
+        sub = f"Suite {suite.name} · {len(models)} models · generated {when}"
+        page1 = _pdf_summary_page(f"Memory benchmark: {primary}", sub, models, colors, meta_by_model,
+                                  notes, sens_rows, ["function"] + models)
+        pages.savefig(page1)
+        plt.close(page1)
+    parts.append(emit(fig_memory_functions(suite), "Memory functions at each tested difficulty"))
 
     # ---- profile
     parts.append("<h2>Memory profile</h2>")
     parts.append(f"<p>Best loss over model sizes and seeds for every memory function (rows) and "
                  f"difficulty level (columns). Lighter is better. Metric: {html.escape(A.METRICS.get(metric, metric))}.</p>")
-    parts.append(_img(fig_profile(profile, models, functions, metric), "Memory profile heatmaps"))
+    parts.append(emit(fig_profile(profile, models, functions, metric), "Memory profile heatmaps"))
 
     # ---- sensitivity
     parts.append("<h2>Difficulty sensitivity</h2>")
     parts.append("<p>How many times larger the loss is at the hardest α than at the easiest α "
                  "(geometric mean over model sizes, the same score as the paper). Lower bars mean the "
                  "model keeps up as the memory gets harder. A value of 1 means difficulty has no effect.</p>")
-    parts.append(_img(fig_sensitivity(sens, models, functions, colors), "Difficulty sensitivity bars"))
-    rows = []
-    for fn in functions:
-        row = [A.label(fn)]
-        for m in models:
-            s = sens[(sens["model"] == m) & (sens["memory_function"] == fn)]
-            row.append("–" if s.empty else f"×{_num(1 + s['score'].iloc[0], '{:.3g}')}")
-        rows.append(row)
-    parts.append(_table(["memory function"] + [html.escape(m) for m in models], rows))
+    parts.append(emit(fig_sensitivity(sens, models, functions, colors), "Difficulty sensitivity bars"))
+    parts.append(_table(["memory function"] + [html.escape(m) for m in models], sens_rows))
 
     # ---- curves
     parts.append("<h2>Loss vs difficulty</h2>")
     parts.append("<p>Best loss (over sizes and seeds) as α increases.</p>")
-    parts.append(_img(fig_loss_vs_alpha(best, models, functions, colors, metric), "Loss versus alpha"))
+    parts.append(emit(fig_loss_vs_alpha(best, models, functions, colors, metric), "Loss versus difficulty α"))
     if best["size"].nunique() > 1:
         parts.append("<h2>Does a bigger model help?</h2>")
         parts.append("<p>Loss at the hardest α as the model width grows. A falling line means the "
                      "difficulty is a capacity problem; a flat line points to the architecture itself.</p>")
-        parts.append(_img(fig_loss_vs_size(best, models, functions, colors), "Loss versus model size"))
+        parts.append(emit(fig_loss_vs_size(best, models, functions, colors), "Loss versus model width (hardest α)"))
 
     # ---- data tables
     parts.append("<h2>Data</h2>")
@@ -407,7 +513,8 @@ def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "
         parts.append(f"<p class='note'><span class='swatch' style='background:{colors[m]}'></span>"
                      f"<strong>{html.escape(m)}</strong>: <code>{html.escape(str(meta.get('model_source', '')))}</code>"
                      + (f" kwargs <code>{html.escape(str(meta.get('model_kwargs')))}</code>" if meta.get("model_kwargs") else "")
-                     + f" · run dir <code>{html.escape(meta['run_dir'])}</code></p>")
+                     + (" · bundled reference result" if meta.get("reference")
+                        else f" · run dir <code>{html.escape(meta['run_dir'])}</code>") + "</p>")
     parts.append("<p class='note'>Generated by <code>cmf</code> (Controllable Memory Functions).</p>")
 
     page = ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
@@ -417,4 +524,6 @@ def build_report(run_dirs: Sequence[Union[str, Path]], out: Union[str, Path] = "
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page, encoding="utf-8")
+    if pages is not None:
+        pages.close()
     return out
