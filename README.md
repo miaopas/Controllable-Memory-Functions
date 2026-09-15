@@ -422,8 +422,22 @@ Contributions and issues are welcome.
 
 ## Citation
 
-If you use this benchmark, please cite the accompanying paper (reference coming
-soon).
+If you use this benchmark, please cite the accompanying paper:
+
+> Jiang, H., Bao, Z., Wang, S., Li, Q. (2026). Numerical Investigation of Sequence Modeling
+> Theory using Controllable Memory Functions. *Journal of Machine Learning*. Online First.
+> [doi:10.4208/jml.251216](https://doi.org/10.4208/jml.251216)
+
+```bibtex
+@article{jiang2026numerical,
+  title   = {Numerical Investigation of Sequence Modeling Theory using Controllable Memory Functions},
+  author  = {Jiang, H. and Bao, Z. and Wang, S. and Li, Q.},
+  journal = {Journal of Machine Learning},
+  year    = {2026},
+  note    = {Online First},
+  doi     = {10.4208/jml.251216}
+}
+```
 
 ## License
 
